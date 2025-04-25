@@ -1,124 +1,124 @@
 // static/script.js
 document.addEventListener('DOMContentLoaded', function() {
-    const relayToggle = document.getElementById('relay-toggle');
-    const statusValue = document.getElementById('status-value');
-    const logsBody = document.getElementById('logs-body');
+    console.log('Script.js loaded');
     
-    // 初始化開關狀態
-    fetchStatus();
+    // Check if SweetAlert2 is loaded
+    if (typeof Swal === 'undefined') {
+        console.error('SweetAlert2 is not defined in script.js!');
+        // Try to load it dynamically as fallback
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+        document.head.appendChild(script);
+    }
     
-    // 獲取操作日誌
+    // Load logs
     fetchLogs();
     
-    // 開關切換事件
-    relayToggle.addEventListener('change', function() {
-        if (this.checked) {
-            // 開啟操作不需要二次確認
-            controlRelay('on');
-        } else {
-            // 關閉操作需要二次確認
+    // Initialize toggle switch based on current status
+    const toggleSwitch = document.getElementById('toggleSwitch');
+    const currentStatus = document.getElementById('status').textContent;
+    toggleSwitch.checked = (currentStatus === '開啟');
+    
+    // Add event listener for toggle switch
+    toggleSwitch.addEventListener('change', function() {
+        const newState = this.checked;
+        
+        if (!newState) {
+            // Turning OFF - show confirmation dialog
             Swal.fire({
-                title: '確認關閉繼電器？',
-                text: '您確定要關閉繼電器嗎？',
-                icon: 'warning',
+                title: '確認關閉?',
+                text: '您確定要關閉電源嗎?',
+                icon: 'question',
                 showCancelButton: true,
-                confirmButtonColor: '#4CAF50',
-                cancelButtonColor: '#d33',
-                confirmButtonText: '確認',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: '是的，關閉!',
                 cancelButtonText: '取消'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    // User confirmed turning off
                     controlRelay('off');
                 } else {
-                    // 取消操作，恢復開關狀態
-                    relayToggle.checked = true;
+                    // User cancelled, revert toggle switch
+                    toggleSwitch.checked = true;
                 }
             });
+        } else {
+            // Turning ON - no confirmation needed
+            controlRelay('on');
         }
     });
-    
-    // 定期更新狀態和日誌（每 10 秒）
-    setInterval(() => {
-        fetchStatus();
-        fetchLogs();
-    }, 10000);
-    
-    // 獲取當前狀態
-    function fetchStatus() {
-        fetch('/api/status')
-            .then(response => response.json())
-            .then(data => {
-                statusValue.textContent = data.status;
-                // 同步開關狀態
-                relayToggle.checked = data.status === '開啟';
-            })
-            .catch(error => console.error('獲取狀態失敗：', error));
-    }
-    
-    // 控制繼電器
-    function controlRelay(command) {
-        fetch('/api/control', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ command: command }),
-        })
+});
+
+function fetchLogs() {
+    fetch('/api/logs')
         .then(response => response.json())
         .then(data => {
-            if (data.status === 'success') {
-                statusValue.textContent = command === 'on' ? '開啟' : '關閉';
-                
-                // 顯示操作結果
-                Swal.fire({
-                    icon: 'success',
-                    title: data.message,
-                    showConfirmButton: false,
-                    timer: 1500
-                });
-                
-                // 更新日誌
-                fetchLogs();
-            } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: '操作失敗',
-                    text: data.message
-                });
-                // 恢復開關狀態
-                fetchStatus();
-            }
+            const logsContainer = document.getElementById('logsContainer');
+            logsContainer.innerHTML = '';
+            
+            data.logs.forEach(log => {
+                const logItem = document.createElement('div');
+                logItem.classList.add('log-item');
+                logItem.innerHTML = `
+                    <span class="timestamp">${log.timestamp}</span>
+                    <span class="status ${log.status === '開啟' ? 'on' : 'off'}">${log.status}</span>
+                `;
+                logsContainer.appendChild(logItem);
+            });
         })
         .catch(error => {
-            console.error('控制繼電器失敗：', error);
-            Swal.fire({
-                icon: 'error',
-                title: '操作失敗',
-                text: '無法連接到伺服器'
-            });
-            // 恢復開關狀態
-            fetchStatus();
+            console.error('Error fetching logs:', error);
+            if (typeof Swal !== 'undefined') {
+                Swal.fire('錯誤', '無法載入操作記錄', 'error');
+            } else {
+                alert('錯誤: 無法載入操作記錄');
+            }
         });
-    }
-    
-    // 獲取操作日誌
-    function fetchLogs() {
-        fetch('/api/logs')
-            .then(response => response.json())
-            .then(data => {
-                // 清空原有日誌
-                logsBody.innerHTML = '';
-                
-                // 填充新日誌
-                data.logs.forEach(log => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${log.timestamp}</td>
-                        <td>${log.status}</td>
-                    `;
-                    logsBody.appendChild(row);
-                });
-            })
-            .catch(error => console.error('獲取日誌失敗：', error));
-    }
-});
+}
+
+function controlRelay(command) {
+    fetch('/api/control', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ command: command })
+    })
+    .then(response => response.json())
+    .then(data => {
+        // Update status display
+        document.getElementById('status').textContent = command === 'on' ? '開啟' : '關閉';
+        
+        // Ensure toggle switch matches status
+        document.getElementById('toggleSwitch').checked = (command === 'on');
+        
+        // Show notification only for turning on (optional)
+        if (command === 'on' && typeof Swal !== 'undefined') {
+            // Simple notification when turning on (can be removed if no notification is desired)
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000,
+                timerProgressBar: true
+            });
+            
+            Toast.fire({
+                icon: 'success',
+                title: '已開啟'
+            });
+        }
+        
+        // Refresh logs
+        fetchLogs();
+    })
+    .catch(error => {
+        console.error('Error controlling relay:', error);
+        if (typeof Swal !== 'undefined') {
+            Swal.fire('操作失敗', '控制繼電器失敗', 'error');
+        } else {
+            alert('錯誤: 控制繼電器失敗');
+        }
+    });
+}

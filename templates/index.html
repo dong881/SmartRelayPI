@@ -3,56 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智慧繼電器控制系統</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.4.8/sweetalert2.min.css">
+    <title>智能電源</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <!-- SweetAlert2 CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.5/sweetalert2.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/limonte-sweetalert2/11.7.5/sweetalert2.all.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>智慧繼電器控制系統</h1>
-        </header>
+        <h1>⚡ 智能電源 ⚡</h1>
         
-        <main>
-            <div class="control-card">
-                <h2>控制面板</h2>
-                <div class="control-panel">
-                    <span class="status-label">狀態：</span>
-                    <span id="status-value" class="status-value">{{ status }}</span>
-                    
-                    <div class="toggle-container">
-                        <label class="switch">
-                            <input type="checkbox" id="relay-toggle">
-                            <span class="slider round"></span>
-                        </label>
-                    </div>
-                </div>
-            </div>
+        <div class="control-panel">
+            <h2>控制面板</h2>
+            <p>現在狀態: <span id="status">{{ status }}</span></p>
             
-            <div class="logs-card">
-                <h2>操作紀錄</h2>
-                <div class="logs-container">
-                    <table id="logs-table">
-                        <thead>
-                            <tr>
-                                <th>時間</th>
-                                <th>動作</th>
-                            </tr>
-                        </thead>
-                        <tbody id="logs-body">
-                            <!-- 日誌將通過 JavaScript 動態填充 -->
-                        </tbody>
-                    </table>
-                </div>
+            <div class="switch-container">
+                <label class="switch">
+                    <input type="checkbox" id="toggleSwitch">
+                    <span class="slider round"></span>
+                </label>
+                <p class="switch-label">滑動開關來控制</p>
             </div>
-        </main>
+        </div>
         
-        <footer>
-            <p>&copy; 2025 智慧繼電器控制系統 by <a href="http://dong.yabi.me" target="_blank">M113-銘鴻</a></p>
-        </footer>
+        <div class="logs-panel">
+            <h2>操作紀錄</h2>
+            <div class="logs-container" id="logsContainer">
+                <!-- Logs will be loaded here -->
+            </div>
+        </div>
     </div>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert2/11.4.8/sweetalert2.all.min.js"></script>
+
     <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Test SweetAlert2 when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            if (typeof Swal !== 'undefined') {
+                // SweetAlert2 loaded successfully
+                console.log('SweetAlert2 loaded successfully');
+            } else {
+                console.error('SweetAlert2 failed to load!');
+            }
+        });
+    </script>
 </body>
 </html>
