@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  relay-control:
+    build: .
+    ports:
+      - "5000:5000"
+    privileged: true  # 需要特權模式以訪問 GPIO
+    restart: always
+    volumes:
+      - ./data:/app/data  # 持久化數據
